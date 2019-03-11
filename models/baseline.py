@@ -5,6 +5,7 @@ import torch.nn.functional as F
 class Baseline(nn.Module):
     def __init__(self):
         super().__init__()
+        self.name = "baseline"
 
         self.linear = nn.Linear(10, 10)
 

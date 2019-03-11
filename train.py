@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from dataset import FreesoundDataset
 from models.baseline import Baseline
+from config import Config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running traing on [{device}]")
@@ -24,31 +25,77 @@ def load_labels() -> Tuple:
 def train(
 	model: nn.Module,
 	epochs: int,
-	dataset: Dataset
+	training_dataset: Dataset,
+	validation_dataset: Dataset
 ) -> None:
 	print("-->Begining training")
 
+	if validation_dataset is not None:
+		datasets = {
+			'train': training_dataset,
+			'validation': validation_dataset
+		}
+		previous_loss = 100
+		phases = ['train', 'validation']
+	else:
+		train_dataset = training_dataset
+		datasets = {
+			'train': train_dataset,
+			'validation': None
+		}
+		phases = ['train']
+
 	model.to(device)
-	model.train()
 	optimizer = torch.optim.Adam(model.parameters())
 	criterion = nn.CrossEntropyLoss()
 
 	for epoch in range(epochs):
 		print(f"--->Running epoch [{epoch}]")
+		# Clear loss for this epoch
+		running_loss = 0.0
 
-		# TODO problem when using batch_size > 1, samples must have the same size
-		for i, (data, label) in enumerate(DataLoader(dataset, batch_size=1, shuffle=True)):
-			print(label)
-			data.to(device)
+		for phase in phases:
+			print(f"Current phase: [{phase}]")
 
-			# optimizer.zero_grad()
+			if phase == "train":
+				model.train()
+			else:
+				model.eval()
 
-			# out = model(data)
-			# loss = criterion(out, label)
+			for i, (data, label) in enumerate(DataLoader(datasets[phase], batch_size=Config.BATCH_SIZE, shuffle=True)):
+				data.to(device)
+				x_batch, label_batch = data
 
-			# loss.backward()
-			# optimizer.step()
-		
+
+				# optimizer.zero_grad()
+
+				# out = model(x_batch)
+				# loss = criterion(out, label_batch)
+
+				if phase == 'train':
+					# Compute the new gradients
+					loss.backward()
+					# Update the weights
+					optimizer.step()
+				running_loss += loss.item()
+
+
+			print('{} loss: {}'.format(phase, running_loss / (i+1)))
+			if phase == 'validation':
+				current_loss = running_loss / (i+1)
+				if current_loss < previous_loss:
+					print('Loss decreased. Saving the model..')
+					# If loss decreases,
+					# save the current model as the best-shot checkpoint
+					torch.save(model.state_dict(), '{}.pt'.format(model.name))
+
+					# update the value of the loss
+					previous_loss = current_loss
+
+			if phase=='train':
+				train_loss = np.append(train_loss, running_loss / (i+1))
+			else:
+				validation_loss = np.append(validation_loss, current_loss)
 
 def main(args) -> None:
 	model = None
@@ -60,7 +107,8 @@ def main(args) -> None:
 	train(
 		model,
 		args.epochs,
-		FreesoundDataset()
+		FreesoundDataset(mode="train"),
+
 	)
 
 if __name__ == "__main__":
