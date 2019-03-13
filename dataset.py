@@ -24,6 +24,8 @@ class FreesoundDataset(Dataset):
 
 		if self.mode == "train":
 			train_idx, validation_idx = next(iter(StratifiedKFold(n_splits=5).split(np.zeros_like(train_label_ids), train_label_ids)))
+			self.train_idx = train_idx
+			self.validation_idx = validation_idx
 			self.data_dir = os.path.join(data_root, "audio_train")
 			self.csv_file = pd.read_csv(os.path.join(data_root, "train.csv"))
 		elif self.mode == "test":
