@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import argparse
-from matplotlib import pyplot.plt
+import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple
 
 import torch
@@ -33,12 +33,6 @@ class LabelTransformer(LabelEncoder):
 			return super(LabelTransformer, self).transform(y)
 		except:
 			return super(LabelTransformer, self).transform([y])
-
-def load_labels() -> Tuple:
-	train = pd.read_csv('../input/train.csv')
-	test = pd.read_csv('../input/sample_submission.csv')
-	return train, test
-
 
 def train(
 	model: nn.Module,
