@@ -6,7 +6,8 @@ import pandas as pd
 
 
 def plot_confusion_matrix(
-	cm, classes,
+	cm,
+	classes,
 	normalize=False,
 	title='Confusion matrix',
 	cmap=plt.cm.Blues
@@ -42,6 +43,7 @@ def plot_confusion_matrix(
 	plt.ylabel('True label')
 	plt.xlabel('Predicted label')
 	plt.tight_layout()
+	plt.show()
 
 def save_results_csv(file_names, labels, filename="results.csv"):
 	df = pd.DataFrame(data={
@@ -49,5 +51,4 @@ def save_results_csv(file_names, labels, filename="results.csv"):
 		"label": labels
 	})
 
-	df.to_csv(filename)
-	
+	df.to_csv(filename, index=False)

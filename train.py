@@ -14,6 +14,7 @@ from sklearn.preprocessing import LabelBinarizer, LabelEncoder, StandardScaler
 
 from dataset import FreesoundDataset
 from dataset_2 import FGPA_Dataset
+from models.model_1 import Model_1
 from models.baseline import Baseline
 from config import Config
 
@@ -34,11 +35,30 @@ class LabelTransformer(LabelEncoder):
 		except:
 			return super(LabelTransformer, self).transform([y])
 
+def get_accuracy(model, loader):
+	model.eval()
+	num_samples = 0
+	num_correct = 0
+	with torch.no_grad():
+		for i, (x_batch, label_batch) in enumerate(loader):
+			x_batch, label_batch = x_batch.to(device), label_batch.to(device)
+
+			x_batch = x_batch.view(x_batch.shape[0], 1, -1)
+			y_pred = model(x_batch.float())
+
+			y_pred.to(device)
+			preds = y_pred.data.max(1)[1]
+			num_samples += preds.size(0)
+			num_correct += (preds == label_batch.long()).sum()
+		
+	return num_correct.item() / num_samples
+
 def train(
 	model: nn.Module,
 	epochs: int,
 	training_dataset: Dataset,
-	validation_dataset: Dataset
+	validation_dataset: Dataset,
+	print_every = 5
 ) -> nn.Module:
 	print("-->Begining training")
 
@@ -64,6 +84,8 @@ def train(
 	optimizer = torch.optim.Adam(model.parameters())
 	loss_criterion = nn.CrossEntropyLoss()
 
+	# Not really epochs, because the loop uses only one split from StratifiedKFold 
+	# TODO update the logging and naming
 	for epoch in range(epochs):
 		print(f"--->Running epoch [{epoch}]")
 		# Clear loss for this epoch
@@ -114,6 +136,11 @@ def train(
 				train_loss = np.append(train_loss, running_loss / (i+1))
 			else:
 				validation_loss = np.append(validation_loss, current_loss)
+		if epoch % print_every == 0:
+			print('Epoch', epoch, '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset)), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset)))
+		print("------------------------------\n\n")
+
+	print('Final epoch', '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset)), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset)))
 
 	plt.figure(figsize=(8,6))
 	plt.plot(train_loss, c='b')
@@ -122,23 +149,26 @@ def train(
 	plt.legend(['Training loss', 'Validation loss'])
 	plt.show()
 
-	model.load_state_dict(torch.load('{}.pt'.format(model_name), map_location=device))
+	model.load_state_dict(torch.load('{}.pt'.format(model.name), map_location=device))
 	return model
 
 def main(args) -> None:
 	model = None
 	if args.model == "baseline":
-		model = Baseline()
-	elif args.model == "model_1":
 		pass
+	elif args.model == "model_1":
+		model = Model_1()
+
+	assert model is not None
 
 	train_csv = pd.read_csv("../../../Storage/FSDKaggle2018_2/train.csv")
-	train_csv = train_csv.iloc[np.random.randint(low=len(train_csv), size=1000)]
+	# train_csv = train_csv.iloc[np.random.randint(low=len(train_csv), size=1000)]
 	train_filenames = train_csv['fname'].values
 	train_labels = train_csv['label'].values
 	
 	label_transformer = LabelTransformer()
 	label_transformer = label_transformer.fit(train_labels)
+	np.save('classes.npy', label_transformer.classes_)
 	train_label_ids = label_transformer.transform(train_labels)
 
 	train_idx, validation_idx = next(iter(StratifiedKFold(n_splits=5).split(np.zeros_like(train_label_ids), train_label_ids)))
@@ -146,17 +176,38 @@ def main(args) -> None:
 	train_labels = train_label_ids[train_idx]
 	val_files = train_filenames[validation_idx]
 	val_labels = train_label_ids[validation_idx]
+	print(f"Number of training samples: {train_files.shape[0]}")
+	print(f"Number of validation samples: {val_files.shape[0]}")
 
-	trained_model = train(
+	model = train(
 		model,
 		args.epochs,
 		FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", train_files, train_labels, use_mfcc=False),
 		FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", val_files, val_labels, use_mfcc=False),
 	)
 
+
+	# skf = StratifiedKFold(n_splits=5).split(np.zeros_like(train_label_ids), train_label_ids)
+
+	# for i, (train_idx, validation_idx) in enumerate(skf):
+	# 	train_files = train_filenames[train_idx]
+	# 	train_labels = train_label_ids[train_idx]
+	# 	val_files = train_filenames[validation_idx]
+	# 	val_labels = train_label_ids[validation_idx]
+	# 	print("####################################################")
+	# 	print(f"Number of training samples: {train_files.shape[0]}")
+	# 	print(f"Number of validation samples: {val_files.shape[0]}")
+
+	# 	model = train(
+	# 		model,
+	# 		args.epochs,
+	# 		FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", train_files, train_labels, use_mfcc=False),
+	# 		FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", val_files, val_labels, use_mfcc=False),
+	# 	)
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser("Training")
-	parser.add_argument("-e", "--epochs", type=int, default=20, help="Number of epochs to train for.")
+	parser.add_argument("-e", "--epochs", type=int, default=10, help="Number of epochs to train for.")
 	parser.add_argument("-m", "--model", type=str, default="baseline", help="Model to be used for training session.")
 	args = parser.parse_args()
 	main(args)

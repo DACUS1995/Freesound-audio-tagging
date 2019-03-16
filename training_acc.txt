@@ -1,0 +1,1 @@
+Final epoch | Validation Accuracy: 0.13203577064702787 | Train Accuracy: 0.8188061278394083
