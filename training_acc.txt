@@ -1,1 +1,5 @@
-Final epoch | Validation Accuracy: 0.13203577064702787 | Train Accuracy: 0.8188061278394083
+Final epoch | Validation Accuracy: 0.13203577064702787 | Train Accuracy: 0.8188061278394083 - model_1.0
+Final epoch | Validation Accuracy: 0.3655970541820095 | Train Accuracy: 0.4623613312202853 - model_1.1
+Final epoch | Validation Accuracy: 0.41743725231175693 | Train Accuracy: 0.6237724348120556 - model_1.2
+Final epoch | Validation Accuracy: 0.49725274725274726 | Train Accuracy: 0.7890677397719651 - model_1.3
+Final epoch | Validation Accuracy: 0.503957783641161 | Train Accuracy: 0.9180426298408886 - model_1.4

@@ -6,50 +6,56 @@ from config import Config
 from .flatten import Flatten
 
 class Baseline(nn.Module):
-	def __init__(self):
+	def __init__(self, inplace=True, training=True):
 		super().__init__()
 		self.name = "model_1"
+		self.inplace = inplace
+		self.training = training
 
-		self.conv1 = nn.Conv1d(1, 16, kernel_size=9)
-		self.max_pool1 = nn.MaxPool1d(3)
-		self.dropout1 = nn.Dropout(0.1)
-		self.relu1 = nn.ReLU()
+		self.conv11 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=9)
+		self.conv12 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=9)
 
-		self.conv2 = nn.Conv1d(16, 16, kernel_size=3)
-		self.max_pool2 = nn.MaxPool1d(7)
-		self.dropout2 = nn.Dropout(0.1)
-		self.relu2 = nn.ReLU()
+		self.conv21 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3)
+		self.conv22 = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3)
 
-		self.conv3 = nn.Conv1d(16, 32, kernel_size=3)
-		self.max_pool3 = nn.MaxPool1d(9)
-		self.dropout3 = nn.Dropout(0.1)
-		self.relu3 = nn.ReLU()
+		self.conv31 = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3)
+		self.conv32 = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3)
+
+		self.conv41 = nn.Conv1d(in_channels=32, out_channels=256, kernel_size=3)
+		self.conv42 = nn.Conv1d(in_channels=256, out_channels=256, kernel_size=3)
+
+		self.l1 = nn.Linear(256, 64)
+		self.l2 = nn.Linear(64, 1028)
+		self.l3 = nn.Linear(1028, 41)
 
 		self.flatten = Flatten()
-		self.dense_layers = nn.Sequential(
-			nn.Linear(29856, 256),
-			nn.Dropout(0.5),
-			nn.Linear(256, 41)
-		)
 
-		# Grouping togheter layers
-		self.conv_layers = nn.Sequential(
-			self.conv1,
-			self.max_pool1,
-			self.dropout1,
-			self.relu1,
-			self.conv2,
-			self.max_pool2,
-			self.dropout2,
-			self.relu2,
-			self.conv3,
-			self.max_pool3,
-			self.dropout3,
-			self.relu3
-		)
 
 	def forward(self, x):
-		out = self.conv_layers(x)
-		out = self.flatten(out)
-		out = self.dense_layers(out)
-		return out
+		x = F.relu(self.conv11(x), inplace=self.inplace)
+		x = F.relu(self.conv12(x), inplace=self.inplace)
+		x = F.max_pool1d(x, kernel_size=16)
+		x = F.dropout(x, 0.1, self.training, self.inplace)
+
+		x = F.relu(self.conv21(x), inplace=self.inplace)
+		x = F.relu(self.conv22(x), inplace=self.inplace)
+		x = F.max_pool1d(x, kernel_size=4)
+		x = F.dropout(x, 0.1, self.training, self.inplace)
+
+		x = F.relu(self.conv31(x), inplace=self.inplace)
+		x = F.relu(self.conv32(x), inplace=self.inplace)
+		x = F.max_pool1d(x, kernel_size=4)
+		x = F.dropout(x, 0.1, self.training, self.inplace)
+
+		x = F.relu(self.conv41(x), inplace=self.inplace)
+		x = F.relu(self.conv42(x), inplace=self.inplace)
+		x = F.max_pool1d(x, kernel_size=119)
+		x = F.dropout(x, 0.2, self.training, self.inplace)
+
+		x = self.flatten(x)
+		# print("new Shape:", x.shape)
+		# raise Exception("You shall not pass.")
+		x = F.relu(self.l1(x), inplace=self.inplace)
+		x = F.relu(self.l2(x), inplace=self.inplace)
+		x = F.softmax(x, dim=1)
+		return x

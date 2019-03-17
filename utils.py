@@ -45,10 +45,10 @@ def plot_confusion_matrix(
 	plt.tight_layout()
 	plt.show()
 
-def save_results_csv(file_names, labels, filename="results.csv"):
+def save_results_csv(file_names, labels, top, filename="results.csv"):
 	df = pd.DataFrame(data={
 		"fname": file_names,
-		"label": labels
+		"label": top
 	})
 
 	df.to_csv(filename, index=False)

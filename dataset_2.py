@@ -52,10 +52,15 @@ class FGPA_Dataset(Dataset):
         if self.use_mfcc:
             samples = librosa.feature.mfcc(samples, sr=self.sr, n_mfcc=self.n_mfccs)
         else:
-            pass
-        if samples.shape[0] != 176400:
-            raise Exception("Wrong sample shape.")
+            samples = self.normalization(samples)
+            
         return samples
     
     def read_waveform(self, filename):
         return librosa.core.load(self.dir+filename, sr=self.sr,res_type='kaiser_fast')[0]
+
+    def normalization(self, data):
+        max_data = np.max(data)
+        min_data = np.min(data)
+        data = (data - min_data) / (max_data - min_data + 1e-6)
+        return data - 0.5

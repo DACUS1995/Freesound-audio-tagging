@@ -47,8 +47,9 @@ def predict(model, test_dataset, evaluation) -> Tuple:
 		predictions = np.array([])
 		actual  = np.array([])
 		correct = np.array([])
+		top = np.empty((0,3))
 
-		batch_size = 1 if evaluation == True else Config.BATCH_SIZE
+		batch_size = 1 if evaluation == True else 1
 		
 		for i, data in enumerate(DataLoader(test_dataset, batch_size)):
 			
@@ -59,20 +60,27 @@ def predict(model, test_dataset, evaluation) -> Tuple:
 			x_batch = x_batch.view(x_batch.shape[0], 1, -1)
 
 			# Get the output of the model
-			out = model(x_batch.float()).max(1)[1]
+			out = model(x_batch.float())
+			out_1 = out.max(1)[1]
+
+			out = out.cpu().detach().numpy()
+			top_3 = out.reshape(-1).argsort()[-3:][::-1]
+			top_3 = top_3.reshape((1, -1))
+			top = np.append(top, top_3, axis=0)
+
 			# Send to device for faster computations
-			out = out.to(device)
+			out_1 = out_1.to(device)
 
 			actual = np.append(actual, label_batch.cpu().detach().numpy())
-			correct = np.append(correct, (out == label_batch.long()).cpu().detach().numpy())
-			predictions = np.append(predictions, out.cpu().detach().numpy())
+			correct = np.append(correct, (out_1 == label_batch.long()).cpu().detach().numpy())
+			predictions = np.append(predictions, out_1.cpu().detach().numpy())
 							
-	return predictions, correct, actual
+	return predictions, correct, actual, top
 
 
 def main(args):
 	if args.model == "baseline":
-		model = Baseline()
+		model = Baseline(inplace=True, training=False)
 	elif args.model == "model_1":
 		model = Model_1()
 	
@@ -82,6 +90,7 @@ def main(args):
 
 	if args.evaluation == False:
 		test_csv = test_csv[test_csv.usage != 'Ignored']
+
 
 	test_filenames = test_csv['fname'].values
 	test_labels = test_csv['label'].values
@@ -97,29 +106,33 @@ def main(args):
 		train_labels = train_csv['label'].values
 		label_transformer = label_transformer.fit(train_labels)
 
-
-	test_label_ids = label_transformer.transform(test_labels)
+	if args.evaluation == False:
+		test_label_ids = label_transformer.transform(test_labels)
+	else:
+		test_label_ids = np.zeros(test_labels.shape)
 	print(len(np.unique(test_label_ids)))
 
 	test_dataset = FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_test/", test_filenames, test_label_ids)
-	predictions, correct, actual = predict(model, test_dataset, args.evaluation)
+	predictions, correct, actual, top = predict(model, test_dataset, args.evaluation)
 
-	# Compute confusion matrix
-	cnf_matrix = confusion_matrix(actual, predictions)
-	np.set_printoptions(precision=2)
-
-	# Plot non-normalized confusion matrix
-	plt.figure(figsize=(16,16))
-	plot_confusion_matrix(
-		cnf_matrix,
-		classes=label_transformer.classes_,
-		title='Title'
-	)
+	if args.evaluation == False:
+		# Compute confusion matrix
+		cnf_matrix = confusion_matrix(actual, predictions)
+		np.set_printoptions(precision=2)
+	
+		# Plot non-normalized confusion matrix
+		plt.figure(figsize=(16,16))
+		plot_confusion_matrix(
+			cnf_matrix,
+			classes=label_transformer.classes_,
+			title='Title'
+		)
 
 	if args.save == True:
 		save_results_csv(
 			test_filenames,
 			label_transformer.inverse(predictions.astype("int")),
+			[' '.join(label_transformer.inverse(x.astype("int"))) for x in top]
 		)
 
 	# Plot normalized confusion matrix
