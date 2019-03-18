@@ -107,14 +107,12 @@ def train(
 
 			for i, data in enumerate(current_dataloader):
 				x_batch, label_batch = data
+				x_batch, label_batch = x_batch.to(device), label_batch.to(device)
 
 				if args.use_mfcc == True:
 					pass
 				else:
 					x_batch = x_batch.view(x_batch.shape[0], 1, -1)
-
-				x_batch = x_batch.to(device)
-				label_batch = label_batch.to(device)
 
 				optimizer.zero_grad()
 
