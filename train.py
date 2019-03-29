@@ -36,7 +36,7 @@ class LabelTransformer(LabelEncoder):
 		except:
 			return super(LabelTransformer, self).transform([y])
 
-def get_accuracy(model, loader):
+def get_accuracy(model, loader, args):
 	model.eval()
 	num_samples = 0
 	num_correct = 0
@@ -63,6 +63,7 @@ def train(
 	epochs: int,
 	training_dataset: Dataset,
 	validation_dataset: Dataset,
+	args,
 	print_every = Config.PRINT_EVERY
 ) -> nn.Module:
 	print("-->Begining training")
@@ -150,10 +151,10 @@ def train(
 			running_loss = 0.0
 				
 		if epoch % print_every == 0:
-			print('Epoch', epoch, '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
+			print('Epoch', epoch, '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
 		print("------------------------------\n\n")
 
-	print('Final epoch', '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
+	print('Final epoch', '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
 
 	plt.figure(figsize=(8,6))
 	plt.plot(train_loss, c='b')
@@ -221,6 +222,7 @@ def main(args) -> None:
 			args.epochs,
 			FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", train_files, train_labels, use_mfcc=args.use_mfcc),
 			FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", val_files, val_labels, use_mfcc=args.use_mfcc),
+			args
 		)
 
 if __name__ == "__main__":
