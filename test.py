@@ -20,6 +20,7 @@ from dataset_2 import FGPA_Dataset
 from utils import plot_confusion_matrix, save_results_csv
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Evaluating using: [{device}]")
 
 
 class LabelTransformer(LabelEncoder):

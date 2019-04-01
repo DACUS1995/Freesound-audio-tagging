@@ -60,9 +60,6 @@ class Model_2(nn.Module):
         )
     
     def forward(self, input):
-        # print(input.shape)
-        # if input.shape[0] != 5:
-        #     raise Exception("Fuck" + str(input.shape[0]))
         conv_out = self.conv_layers(input.view(input.shape[0], 1, input.shape[1], input.shape[2]))
         conv_out = self.flatten(conv_out)
         dense_out = self.dense_layers(conv_out)
