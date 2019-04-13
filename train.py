@@ -3,9 +3,7 @@ import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple
-import importlib.import_module
 
-# TODO try to select the model using dinamic import
 
 import torch
 import torch.nn as nn

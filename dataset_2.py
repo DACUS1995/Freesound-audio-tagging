@@ -54,6 +54,7 @@ class FGPA_Dataset(Dataset):
 	def load_data_from(self, filename):
 
 		original_samples = self.read_waveform(filename)
+		original_samples = self.remove_silence(original_samples)
 
 		if len(original_samples) > self.max_length:
 			max_offset = len(original_samples) - self.max_length
@@ -82,3 +83,6 @@ class FGPA_Dataset(Dataset):
 		min_data = np.min(data)
 		data = (data - min_data) / (max_data - min_data + 1e-6)
 		return data - 0.5
+
+	def remove_silence(self, audio_segment):
+		return librosa.effects.trim(audio_segment)
