@@ -52,7 +52,6 @@ class FGPA_Dataset(Dataset):
 		return len(self.filenames)
 	
 	def load_data_from(self, filename):
-
 		original_samples = self.read_waveform(filename)
 		original_samples = self.remove_silence(original_samples)
 
@@ -85,4 +84,4 @@ class FGPA_Dataset(Dataset):
 		return data - 0.5
 
 	def remove_silence(self, audio_segment):
-		return librosa.effects.trim(audio_segment)
+		return librosa.effects.trim(audio_segment)[0]

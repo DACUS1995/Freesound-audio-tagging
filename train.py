@@ -18,6 +18,7 @@ from dataset_2 import FGPA_Dataset
 from models.model_1 import Model_1
 from models.baseline import Baseline
 from models.model_2 import Model_2
+from models.model_3 import Model_3
 from config import Config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -152,10 +153,10 @@ def train(
 			running_loss = 0.0
 				
 		if epoch % print_every == 0:
-			print('Epoch', epoch, '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
+			print('Epoch', epoch, '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args))
 		print("------------------------------\n\n")
 
-	print('Final epoch', '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)))
+	print('Final epoch', '| Validation Accuracy:', get_accuracy(model, DataLoader(validation_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args), '| Train Accuracy:', get_accuracy(model, DataLoader(training_dataset, batch_size=Config.BATCH_SIZE, shuffle=True), args))
 
 	plt.figure(figsize=(8,6))
 	plt.plot(train_loss, c='b')
@@ -175,13 +176,15 @@ def main(args) -> None:
 		model = Model_1()
 	elif args.model == "model_2":
 		model = Model_2()
+	elif args.model == "model_3":
+		model = Model_3()
 
 	assert model is not None
 
 	train_csv = pd.read_csv("../../../Storage/FSDKaggle2018_2/train.csv")
 
 	train_csv = train_csv[train_csv.manually_verified != 0]
-	# train_csv = train_csv.iloc[np.random.randint(low=len(train_csv), size=1000)] # Use this for short experiments (only 1000 samples)
+	train_csv = train_csv.iloc[np.random.randint(low=len(train_csv), size=1000)] # Use this for short experiments (only 1000 samples)
 
 	train_filenames = train_csv['fname'].values
 	train_labels = train_csv['label'].values

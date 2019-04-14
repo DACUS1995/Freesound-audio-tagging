@@ -36,14 +36,7 @@ class LabelTransformer(LabelEncoder):
 		except:
 			return super(LabelTransformer, self).transform([y])
 
-def geometric_mean_preds(_preds):
-	preds = _preds.copy()
-	for i in range(1, preds.shape[0]):
-		preds[0] = np.multiply(preds[0], preds[i])
-	return preds[0]
-
 def predict(model, test_dataset, evaluation, use_mfcc) -> Tuple:
-	print("Predicting test dataset.")
 	# Set the model to evaluation mode
 	model.to(device)
 	model = model.eval()
@@ -79,9 +72,6 @@ def predict(model, test_dataset, evaluation, use_mfcc) -> Tuple:
 			top_3 = top_3.reshape((1, -1))
 			top = np.append(top, top_3, axis=0)
 
-			# Send to device for faster computations
-			out_1 = out_1.to(device)
-
 			actual = np.append(actual, label_batch.cpu().detach().numpy())
 			correct = np.append(correct, (out_1 == label_batch.long()).cpu().detach().numpy())
 			predictions = np.append(predictions, out_1.cpu().detach().numpy())
@@ -99,11 +89,10 @@ def main(args):
 	
 	model.load_state_dict(torch.load('{}.pt'.format(model.name), map_location=device))
 
-	test_csv = pd.read_csv("../../../Storage/FSDKaggle2018_2/test_post_competition.csv")
+	test_csv = pd.read_csv("../../../Storage/FSDKaggle2018_2/train.csv")
 
-	if args.evaluation == False:
-		test_csv = test_csv[test_csv.usage != 'Ignored']
-
+	if args.evaluation == True:
+		test_csv = test_csv[test_csv.manually_verified == 0]
 
 	test_filenames = test_csv['fname'].values
 	test_labels = test_csv['label'].values
@@ -119,14 +108,21 @@ def main(args):
 		train_labels = train_csv['label'].values
 		label_transformer = label_transformer.fit(train_labels)
 
-	if args.evaluation == False:
+	if args.evaluation == True:
 		test_label_ids = label_transformer.transform(test_labels)
 	else:
 		test_label_ids = np.zeros(test_labels.shape)
-	print(len(np.unique(test_label_ids)))
 
-	test_dataset = FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_test/", test_filenames, test_label_ids, use_mfcc=args.use_mfcc)
+	test_dataset = FGPA_Dataset("../../../Storage/FSDKaggle2018_2/audio_train/", test_filenames, test_label_ids, use_mfcc=True)
 	predictions, correct, actual, top = predict(model, test_dataset, args.evaluation, args.use_mfcc)
+
+	df = pd.DataFrame(data={
+		"fname": test_filenames,
+		"label": predictions,
+		"correct": correct
+	})
+
+	df.to_csv("verified.csv", index=False)
 
 	if args.evaluation == False:
 		# Compute confusion matrix
@@ -140,18 +136,6 @@ def main(args):
 			classes=label_transformer.classes_,
 			title='Title'
 		)
-
-	if args.save == True:
-		save_results_csv(
-			test_filenames,
-			label_transformer.inverse(predictions.astype("int")),
-			[' '.join(label_transformer.inverse(x.astype("int"))) for x in top]
-		)
-
-	# Plot normalized confusion matrix
-	# plt.figure(figsize=(20,20))
-	# plot_confusion_matrix(cnf_matrix, classes=label_transformer.classes_, normalize=True,
-	#                       title='Normalized confusion matrix')
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser("Testing")
