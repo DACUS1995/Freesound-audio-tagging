@@ -58,7 +58,7 @@ class Model_3(nn.Module):
 		if self.h_n == None and self.c_n == None:
 			out, (h_current, c_current) = self.rnn_block_2(out)
 		else:
-			out, (h_current, c_current) = self.rnn_block_2(out, (self.h_n, self.c_n))
+			out, (h_current, c_current) = self.rnn_block_2(out)
 		self.h_n = h_current
 		self.c_n = c_current
 
