@@ -19,9 +19,11 @@ from models.model_1 import Model_1
 from models.baseline import Baseline
 from models.model_2 import Model_2
 from models.model_3 import Model_3
+from models.model_4 import Model_4
 from config import Config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 print(f"Running training on [{device}]")
 
 
@@ -178,6 +180,8 @@ def main(args) -> None:
 		model = Model_2()
 	elif args.model == "model_3":
 		model = Model_3()
+	elif args.model == "model_4":
+		model = Model_4()
 
 	assert model is not None
 

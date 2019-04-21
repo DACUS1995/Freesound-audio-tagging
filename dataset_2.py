@@ -84,4 +84,7 @@ class FGPA_Dataset(Dataset):
 		return data - 0.5
 
 	def remove_silence(self, audio_segment):
-		return librosa.effects.trim(audio_segment)[0]
+		if audio_segment.shape[0] == 0:
+			return audio_segment
+		else:
+			return librosa.effects.trim(audio_segment)[0]

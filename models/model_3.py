@@ -18,9 +18,13 @@ class Model_3(nn.Module):
 		self.c_n = None
 
 		self.conv_block_1 = nn.Sequential(
-			nn.Conv1d(1, 3, kernel_size=8),
+			nn.Conv1d(1, 3, kernel_size=4),
 			nn.MaxPool1d(8),
 			nn.BatchNorm1d(3),
+			nn.ReLU(),
+			nn.Conv1d(3, 3, kernel_size=4),
+			nn.MaxPool1d(4),
+			nn.BatchNorm1d(1),
 			nn.ReLU(),
 			nn.Conv1d(3, 1, kernel_size=4),
 			nn.MaxPool1d(4),
