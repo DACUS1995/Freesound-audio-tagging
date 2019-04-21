@@ -66,7 +66,7 @@ class Model_4(nn.Module):
 		self.h_n = h_current
 		self.c_n = c_current
 
-		out = h_current.view(Config.BATCH_SIZE, LSTM_LAYERS, NUM_DIRECTIONS, HIDDEN_SIZE)
+		out = h_current.view(-1, LSTM_LAYERS, NUM_DIRECTIONS, HIDDEN_SIZE)
 		out = out[:, LSTM_LAYERS - 1, :, :]
 		out = out.view(out.size(0), -1)
 
